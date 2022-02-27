@@ -84,18 +84,24 @@ class Agent(Thing):
     There is an optional slot, .performance, which is a number giving
     the performance measure of the agent in its environment."""
 
-    def __init__(self, program=None):
+    def __init__(self, program=None, direction = None):
         self.alive = True
         self.bump = False
         self.holding = []
         self.performance = 0
-        if program is None or not isinstance(program, collections.abc.Callable):
+        if program is None:
+                #  or \
+                # (not isinstance(program, collections.abc.Callable) \
+                # and not isinstance(program, function)):
             print("Can't find a valid program for {}, falling back to default.".format(self.__class__.__name__))
 
             def program(percept):
                 return eval(input('Percept={}; action? '.format(percept)))
 
         self.program = program
+
+
+        self.direction = direction 
 
     def can_grab(self, thing):
         """Return True if this agent can grab this thing.
@@ -110,7 +116,8 @@ def TraceAgent(agent):
 
     def new_program(percept):
         action = old_program(percept)
-        print('{} perceives {} and does {}'.format(agent, percept, action))
+        print('{} perceives {} and does {} with performance {}'\
+            .format(agent, percept, action, agent.performance))
         return action
 
     agent.program = new_program
@@ -662,7 +669,7 @@ class GraphicEnvironment(XYEnvironment):
             self.reveal()
     """
 
-    def run(self, steps=1000, delay=1):
+    def run(self, steps=2000, delay=1):
         """Run the Environment for given number of time steps,
         but update the GUI too."""
         for step in range(steps):
@@ -743,7 +750,7 @@ class VacuumEnvironment(XYEnvironment):
         self.add_walls()
 
     def thing_classes(self):
-        return [Wall, Dirt, ReflexVacuumAgent, RandomVacuumAgent,
+        return [Wall, Dirt, XYReflexVacuumAgent, ReflexVacuumAgent, RandomVacuumAgent,
                 TableDrivenVacuumAgent, ModelBasedVacuumAgent]
 
     def percept(self, agent):
@@ -767,6 +774,15 @@ class VacuumEnvironment(XYEnvironment):
 
         if action != 'NoOp':
             agent.performance -= 1
+
+    def is_done(self):
+        # Elsa defined
+        num_dirty = 0
+        for idx in range(10):
+            num_dirty += len([self.some_things_at([idx,j], Dirt) \
+                for j in range(10)])
+        return False if num_dirty else True
+
 
 
 class TrivialVacuumEnvironment(Environment):
